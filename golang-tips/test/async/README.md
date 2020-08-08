@@ -1,0 +1,1 @@
+主要通过sync.WaitGroup来控制

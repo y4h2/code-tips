@@ -1,0 +1,1 @@
+用docker来控制infrastructure的创建和销毁. 以此来为测试提供环境
