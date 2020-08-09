@@ -1,0 +1,1 @@
+npx add-cors-to-couchdb -u admin -p password

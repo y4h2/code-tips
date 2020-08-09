@@ -1,0 +1,17 @@
+{
+  "name": "pouch-couch",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pouchdb": "^7.2.2"
+  },
+  "devDependencies": {
+    "add-cors-to-couchdb": "0.0.6"
+  }
+}
