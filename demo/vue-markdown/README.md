@@ -1,4 +1,5 @@
 # vue-markdown
+转换vue.js官方示例 markdown html/css/js为标准vue component写法
 
 ## Project setup
 ```
