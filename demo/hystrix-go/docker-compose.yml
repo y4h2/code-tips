@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  service-a:
+    build:
+      context: ./service-a
+      dockerfile: Dockerfile
+    image: service-a:1.0.1
+    ports:
+      - 8080:8080
+    networks:
+      - backend
+
+  hystrix-dashboard:
+    image: mlabouardy/hystrix-dashboard:latest
+    ports:
+      - "9002:9002"
+    networks:
+      - backend
+
+  
+networks:
+  backend:
+    driver: bridge
