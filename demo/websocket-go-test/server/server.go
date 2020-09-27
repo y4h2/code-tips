@@ -25,11 +25,7 @@ func (app *App) Start() error {
 	}
 	app.listener = listener
 
-	go func() {
-		if err := app.server.Serve(app.listener); err != nil {
-			log.Fatalf("failed to launch app :%v", err)
-		}
-	}()
+	go app.server.Serve(app.listener)
 
 	return nil
 }
