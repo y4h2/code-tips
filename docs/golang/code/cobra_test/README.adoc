@@ -1,0 +1,19 @@
+
+Based on the https://gianarb.it/blog/golang-mockmania-cli-command-with-cobra[blog]
+
+
+The testing sample of cobra command line.
+
+
+.Sample Code
+[source,go]
+----
+include::cobra.go[]
+----
+
+
+.Sample Test
+[source,go]
+----
+include::cobra_test.go[]
+----

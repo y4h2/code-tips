@@ -1,0 +1,14 @@
+# Code Tips
+:author: y4h2
+:revnumber: v0.1
+:revdate: June/26/2021
+// :notitle:
+:doctype: book
+:chapter-label:
+:sectnums:
+:toc: left
+:toclevels: 2
+:toc-title: Table of Contents
+// :front-cover-image: image::images/cover.jpg[]
+:description: This is the description of your boo
+

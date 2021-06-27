@@ -1,0 +1,4 @@
+# Golang Contract Test
+
+
+确保安装pact

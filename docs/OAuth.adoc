@@ -1,0 +1,6 @@
+= OAuth
+
+
+OIDC和OAuth的关系
+
+OIDC是封装在OAuth之上的

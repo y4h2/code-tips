@@ -1,0 +1,27 @@
+:doctype: book
+
+# Docker
+
+
+## Basic Knowledge
+
+
+## Docker Multi-stage
+
+[source,dockerfile]
+----
+include::../docker/multi-stage/simple.Dockerfile[]
+----
+
+
+[plantuml, diagram-classes, png]
+----
+class BlockProcessor
+class DiagramBlock
+class DitaaBlock
+class PlantUmlBlock
+
+BlockProcessor <|-- DiagramBlock
+DiagramBlock <|-- DitaaBlock
+DiagramBlock <|-- PlantUmlBlock
+----

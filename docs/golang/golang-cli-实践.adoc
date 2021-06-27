@@ -1,0 +1,218 @@
+
+:author: y4h2
+:chapter-label:
+:sectnums:
+:toc: left
+:toclevels: 2
+:toc-title: Table of Contents
+:icons: font
+
+
+# Golang命令行工具实践
+
+[sidebar]
+.Abstraction
+--
+这篇文章对比了两套golang中流行的命令行package：`spf13/cobra` 和 `urfave/cli`, 举例说明了各个方案的优缺点，cobra只能通过外部变量进行flag和hook的传值。同时给出了对已有的cobra命令行的改进方案。
+--
+
+
+
+根据github上的star数量还有其他人的推荐，大致有两种比较流行的CLI方案  +
+
+- https://github.com/spf13/cobra[spf13/cobra]: 后文简称cobra
+- https://github.com/urfave/cli[urfave/cli]: 后文简称cli
+
+
+Cobra被各大开源项目使用，包括Kubernetes, Docker, 等等。官方文档中介绍了大量功能（例如flag和config的绑定，flag的继承， hook函数等），覆盖面很广，但是各个功能之间的分离感较强（后面会举例说明原因）。cli没有cobra那么流行，但是在github上也有相当多的star。官方文档中介绍和功能和cobra基本相同，但是参数的传递实现的更为优雅。个人不是很喜欢cobra的编码风格，更加偏向使用CLI。
+
+
+## 体验
+
+### Working with Flags
+
+省略无关代码
+
+.cobra
+[source,go]
+----
+func main() {
+  var echoTimes int                                      # <1>
+  var cmdTimes = &cobra.Command{
+    Run: func(cmd *cobra.Command, args []string) {
+      for i := 0; i < echoTimes; i++ {                   # <3>
+        fmt.Println("Echo: " + strings.Join(args, " "))
+      }
+    },
+  }
+
+  cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input") # <2>
+}
+----
+<1> 声明flag绑定的参数echoTimes
+<2> 从命令行读取flag的值，保存到echoTimes
+<3> 使用echoTimes
+
+从上述步骤中可以看出，cobra只能通过变量的范围传递参数，不符合我心中的最佳实践。
+
+
+再来看下cli的代码
+
+.cli
+[source,go]
+----
+app.Commands = []*cli.Command{
+  {
+    Flags: []cli.Flag{
+      &cli.IntFlag{Name: "echoTimes", Aliases: []string{"t"}},
+    },
+    Action: func(c *cli.Context) error {
+      echoTimes := c.Int("echoTimes")        # <1>
+      for i := 0; i < echoTimes; i++ {                 
+        fmt.Println("Echo: " + strings.Join(args, " "))
+      }
+      return nil
+    },
+  },
+}
+----
+<1> 这里的设计很不错，避免了用户自己进行类型转换
+
+这里可以看到cli中，flag直接定义在command结构体中，Action中通过context可以取到flag中定义的值，当然tradeoff就是如果flag定义有错误，只有在运行时才能检查到。
+
+
+### Hook
+
+Cobra和CLI都提供了Hook的功能，所谓的hook指在action前后添加钩子函数。
+
+
+.cobra
+[source,go]
+----
+func main() {
+  var rootCmd = &cobra.Command{
+    PersistentPreRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd PersistentPreRun with args: %v\n", args)
+    },
+    PreRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd PreRun with args: %v\n", args)
+    },
+    Run: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd Run with args: %v\n", args)
+    },
+    PostRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd PostRun with args: %v\n", args)
+    },
+    PersistentPostRun: func(cmd *cobra.Command, args []string) {
+      fmt.Printf("Inside rootCmd PersistentPostRun with args: %v\n", args)
+    },
+  }
+}
+----
+
+cobra有四个hook， PersistentPreRun，PreRun，PostRun，和PersistentPostRun, PersistentXXX可以继承。 +
+注意这里的函数签名，cmd和args不能和Run之间传递变量。
+
+
+.cli
+[source,go]
+----
+func main() {
+  app := &cli.App{
+    Before: func(c *cli.Context) error {
+      fmt.Fprintf(c.App.Writer, "brace for impact\n")
+      return nil
+    },
+    After: func(c *cli.Context) error {
+      fmt.Fprintf(c.App.Writer, "did we lose anyone?\n")
+      return nil
+    },
+    Action: func(c *cli.Context) error {
+      return nil
+    },
+  }
+}
+----
+
+cli定义了Before和After两个hook,和Action之间可以通过context传递变量。这两个hook也可以继承给子命令。
+
+
+#### 提升Cobra的体验
+
+关于hook间传值，在cobra的 https://github.com/spf13/cobra/issues/563[issue] 中也有人提出过相关的讨论，也给出了proposal, 但是作者一直没有回应。 +
+目前的解决办法是通过外部变量传递，参考 https://github.com/MichaelMure/git-bug/blob/master/commands/add.go[代码]
+
+[source,go]
+----
+func loadBackendEnsureUser(env *Env) func(*cobra.Command, []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		...
+	}
+}
+
+func closeBackend(env *Env, runE func(cmd *cobra.Command, args []string) error) func(*cobra.Command, []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		...
+	}
+}
+
+func newAddCommand() *cobra.Command {
+  env := newEnv()
+  cmd := &cobra.Command{
+		PreRunE: loadBackendEnsureUser(env),          # <1>
+		RunE: closeBackend(env, func(cmd *cobra.Command, args []string) error { <2>
+			return runAdd(env, options)
+		}),
+	}
+}
+----
+<1> loadBackendEnsureUser函数中装载env变量
+<2> wrap原有的RunE的函数签名 `func(cmd *cobra.Command, args []string) error` , 在closeBackend函数中传递PreRunE中装载好的env
+
+
+
+### 小结
+
+两个package的其他特性基本都大同小异，不值得再花时间讨论。 +
+但是根据上面提到的功能对比，我们可以发现，cobra只能通过外部变量的方式来传递值，cli可以通过context的方式传递值。  +
+如果是新开项目，我个人更偏向使用cli。如果想在公司原有的cobra代码上进行改造，推荐使用后续章节中介绍的自定义
+
+
+
+
+## 实践
+
+如果不想受到package功能的约束，可以定义自己的结构体，给自定义的结构体添加hook之类的功能， 把cobra当做一个命令行封装工具使用。
+
+.代码
+[source,go]
+----
+include::code/customize_cli/main.go[]
+----
+这里的valueStore只是一个例子，由于这里的Context由我们自己维护，我们可以根据实际情况避免使用interface{}.
+
+
+.示例
+[source,go]
+----
+include::code/customize_cli/main_test.go[]
+----
+
+
+这里我们可以完全不使用cobra提供的hook功能，自己用30行代码就能定义一个简单的hook，这样在不修改package的情况下，使用更为优雅的传值方式。
+
+
+## 测试
+
+有几种测试方案： +
+- 只测试核心代码，忽略外面包装的command代码
+- 连command一起测试
+
+
+include::code/cobra_test/README.adoc[]
+
+
+
+## 其他
+
+目前提到的命令行之间的命令基本是相互独立的，还没有涉及到交互式命令。
