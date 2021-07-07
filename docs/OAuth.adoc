@@ -1,6 +1,104 @@
+
+:author: y4h2
+:chapter-label:
+:sectnums:
+:toc: left
+:toclevels: 5
+:toc-title: Table of Contents
+:icons: font
+:sourcedir: ../
+
+
+
 = OAuth
 
 
-OIDC和OAuth的关系
+.OIDC和OAuth的关系:
+* OAuth 2.0是一种授权协议，而不是身份认证协议
+* OIDC封装在OAuth之上， OIDC= 授权协议 + 身份认证
 
-OIDC是封装在OAuth之上的
+## 术语和基础
+
+* Realm
+* Client
+* User
+
+
+### JWT
+
+* JWT本身不包含加密功能，token中包含的信息相当于public的
+* JWT分为两个部分，平时见到的access_token只是base64加上签名部分
+* 签名只需要用Public Key去验证的
+
+
+
+
+
+## 流程
+
+### 自动更新token的流程
+
+
+## FAQ
+
+### Public Client
+对于Browser或者命令行，client需要被注册成Public的，如果在client端存储credential是会被暴露给用户的。
+
+### 获取用户信息
+
+
+## Keycloak
+
+.Resources
+* Official: https://oauth.net/2/
+* Book: OAuth 2.0 in Action
+* Book: Keycloak - Identity and Access Management for Modern Applications
+** https://github.com/PacktPublishing/Keycloak-Identity-and-Access-Management-for-Modern-Applications[Code]
+* Keycloak Go Client: https://github.com/Nerzal/gocloak
+** 测试值得参考
+* Youtube: https://www.youtube.com/watch?v=FyVHNJNriUQ[How to secure your Microservices with Keycloak - Thomas Darimont]
+** https://github.com/thomasdarimont/keycloak-docker-demo[code]
+* Blog: https://blog.csdn.net/yevvzi/article/details/108512588[Keycloak + Istio的RBAC教程]
+
+
+### Launch With Docker
+
+[source,bash]
+----
+include::{sourcedir}/oauth/keycloak/Makefile[tags=run-keycloak]
+----
+
+
+### Discovery URL
+
+[source,bash]
+----
+curl -X GET \
+  http://${host}:${port}/auth/realms/${realm}/.well-known/uma2-configuration
+----
+
+* authorization_endpoint: The URL to use for authentication requests
+* token_endpoint: The URL to use for token requests
+* introspection_endpoint: The URL to use for introspection requests
+* userinfo_endpoint: The URL to use for UserInfo requests
+* grant_types_supported: The list of supported grant types
+* response_types_supported: The list of supported response types
+
+
+
+
+
+
+
+
+### Deploy in Production
+
+
+
+
+
+## 其他
+
+
+* https://github.com/ory/hydra[ory/hydra]: golang实现的OAuth server
+** https://www.ory.sh/hydra/docs/5min-tutorial/[docker-compose tutorial]

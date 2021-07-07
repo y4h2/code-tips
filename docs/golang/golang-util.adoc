@@ -1,0 +1,84 @@
+
+:author: y4h2
+:chapter-label:
+:sectnums:
+:toc: left
+:toclevels: 2
+:toc-title: Table of Contents
+:icons: font
+:tabs:
+:sourcedir: ../../
+
+# Golang 工具包
+
+
+
+
+## http相关
+
+### 自己封装Request和ResponseWriter
+
+
+### http read body
+
+
+
+### root handler集中处理error
+
+
+
+## 数据库相关
+
+
+### FQA
+
+* 是否应该在生产环境使用ORM ？
+** 使用ORM的主要问题：在DBA发现慢SQL的时候，很难定位到产生问题的代码
+
+## Log相关
+
+
+
+
+## error相关
+
+
+## 测试相关
+
+
+.各种库的简介
+* gkingo
+* testify系列
+** testify/suite
+** testify/assert
+** testify/require
+
+
+testify/suite sample
+
+
+
+
+httptest server
+
+
+
+## Config
+
+根据12 factor app， config最好用environment variable传入。 +
+如果只是为了读取环境变量，用envconfig最为便捷
+
+.envconfig 示例
+[source,go]
+----
+include::{sourcedir}/golang-tips/load-config/main.go[]
+----
+
+## 常用Type
+
+封装url.URL
+
+
+## 其他
+
+=

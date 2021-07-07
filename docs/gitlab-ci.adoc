@@ -1,0 +1,37 @@
+:author: y4h2
+:chapter-label:
+:sectnums:
+:toc: left
+:toclevels: 2
+:toc-title: Table of Contents
+:icons: font
+
+
+# GitLab CI实践
+
+
+
+
+
+
+## CI/CD Workflow
+
+.Workflow
+* 单project
+* 多project
+
+
+
+### 多project
+
+.基本划分
+* Config Repo
+* Code Repo
+* Deployment Repo
+
+
+
+
+## Tips
+
+对于跨Project的Pipeline，可以把脚本集中在一个公共project中

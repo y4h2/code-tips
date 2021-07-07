@@ -1,0 +1,59 @@
+
+:author: y4h2
+:chapter-label:
+:sectnums:
+:toc: left
+:toclevels: 2
+:toc-title: Table of Contents
+:icons: font
+
+# Ascidoc Cheat Sheet
+
+
+## Common Header
+
+----
+:author: y4h2
+:chapter-label:
+:sectnums:
+:toc: left
+:toclevels: 2
+:toc-title: Table of Contents
+:icons: font
+----
+
+
+## Include with Variable
+
+----
+:includedir: _includes
+:sourcedir: ../src/main/java
+
+\include::{includedir}/fragment1.adoc[]
+
+\include::{sourcedir}/org/asciidoctor/Asciidoctor.java[]
+----
+
+
+## Include by Tagged Regions
+
+
+----
+# tag::timings[]  
+if timings
+  timings.record :read
+  timings.start :parse
+end
+# end::timings[]  
+# tag::parse[] 
+doc = (options[:parse] == false ? (Document.new lines, options) :
+    (Document.new lines,options).parse)
+timings.record :parse if timings
+doc
+# end::parse[] 
+----
+
+
+----
+\include::core.rb[tag=parse] 
+----
