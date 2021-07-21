@@ -1,0 +1,52 @@
+
+
+# HTTPS in Kubernetes
+
+https://www.youtube.com/watch?v=7K0gAYmWWho
+
+## Setup Ingress on Minikube
+
+
+.Enable MiniKube Ingress Addson
+----
+minikube start --vm=true
+minikube addons list
+minikube ip
+----
+
+
+
+## Run a Pod to use Ingress HTTP
+
+
+----
+k run nginx --image=nginx
+k expose pod nginx --port=80
+k apply -f ingress.yaml
+# modify /etc/hosts
+echo "$(minikube ip) example.com" | sudo tee -a /etc/hosts
+
+curl example.com
+----
+
+.ingress.yaml
+----
+include::./ingress.yaml[]
+----
+
+
+## Expose the pod with HTTPS
+
+----
+# generate tls.crt and tls.key
+openssl req -x509 -newkey rsa:4096 -sha256 -nodes -keyout tls.key -out tls.crt -subj "/CN=example.com" -days 365
+
+k create secrete tls example-com-tls --cert=tls.crt --key=tls.key
+
+k apply -f ingress-tls.yaml
+----
+
+.ingress-tls.yaml
+----
+include::./ingress-tls.yaml[]
+----
