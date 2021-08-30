@@ -1,0 +1,257 @@
+
+
+## Tips
+
+多用k explain查询yaml
+
+
+## Scenario: 创建Pod
+
+----
+Your company is getting ready to launch a new website, and they need you to set up an nginx web server in their Kubernetes cluster. The nginx server will need to be accessible via network in the future, so you will need to expose port 80 as a containerPort for the nginx container. Your team has also asked you to ensure that nginx runs in quiet mode for the time being to cut down on unnecessary log output. You can do this by setting the command to nginx and passing the following arg to the container: -g daemon off; -q. As this nginx server belongs to the Web team, you will need to create it in the team's web namespace.
+
+To summarize:
+
+Use the nginx container image.
+The container needs a containerPort of 80.
+Set the command to nginx
+Pass in the -g daemon off; -q args to run nginx in quiet mode.
+Create the pod in the web namespace.
+Once the pod is created, you should be able to find it with kubectl get pods -n web. Once the pod is created, you can get more information about its current status with kubectl describe pod nginx -n web.
+----
+
+
+----
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+  namespace: web
+spec:
+  containers:
+  - name: nginx
+    image: nginx
+    command: ["nginx"]
+    args: ["-g", "daemon off;", "-q"]
+    ports:
+    - containerPort: 80
+----
+
+
+## CKAD Challenge #1: Pod Creation
+
+. Create a pod of image bash which runs once to execute the command hostname > /tmp/hostname && sleep 1d.
+. Export and edit its YAML to add a label my-label: test.
+. Create the pod from the YAML file.
+. Connect via ssh to the pod. Make sure its hostname is written into the file /tmp/hostname.
+. Delete the pod instantly without waiting time.
+
+
+----
+k run pod1 --image=bash --dry-run=client -oyaml -- bash -c "hostname > /tmp/hostname && sleep 1d" > pod.yaml
+
+# edit pod.yaml
+
+k create -f pod.yaml
+
+k exec -it pod1 -- /bin/sh
+# caat /tmp/hostname
+
+k delete po pod1 --force --grace-period=0
+----
+
+
+.pod.yaml
+----
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pod1
+    my-label: test
+  name: pod1
+spec:
+  containers:
+  - args:
+    - bash
+    - -c
+    - hostname > /tmp/hostname && sleep 1d
+    image: bash
+    name: pod1
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+status: {}
+----
+
+
+
+
+## CKAD Challenge #2: Deployments and Services
+
+
+
+. Create a new namespace k8s-challenge-2-a and assure all following operations (unless different namespace is mentioned) are done in this namespace.
+. Create a deployment named nginx-deployment of three pods running image nginx with a memory limit of 64MB.
+. Expose this deployment under the name nginx-service inside our cluster on port 4444, so point the service port 4444 to pod ports 80.
+. Spin up a temporary pod named pod1 of image cosmintitei/bash-curl, ssh into it and request the default nginx page on port 4444 of our nginx-service using curl.
+. Spin up a temporary pod named pod2 of image cosmintitei/bash-curl in namespace k8s-challenge-2-b, ssh into it and request the default nginx page on port 4444 of our nginx-service in namespace k8s-challenge-2-a using curl.
+
+
+----
+k create ns k8s-challenge-2-a
+
+k create deploy nginx-deployment --replicas=3
+
+k create -n k8s-challenge-2-a deploy nginx-deployment --image=nginx --replicas=3 --dry-run=client -oyaml > deploy.yaml
+
+# modify the deploy.yaml
+
+k expose deploy nginx-deploy -n k8s-challenge-2-a --port=4444 --target-port=80 --name=nginx-service
+
+k run --it pod1 -n k8s-challenge-2-a --image=cosmintitei/bash-curl --rm 
+# curl nginx-service:4444
+
+
+k create ns k8s-challenge-2-b
+k run --it pod1 -n k8s-challenge-2-b --image=cosmintitei/bash-curl --rm 
+# curl nginx-service.k8s-challenge-2-a:4444
+----
+
+.deploy.yaml
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nginx-deployment
+  name: nginx-deployment
+  namespace: k8s-challenge-2-a
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-deployment
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx-deployment
+    spec:
+      containers:
+      - image: nginx
+        name: nginx
+        resources:
+          limits:
+            memory: "64Mi"
+----
+
+
+
+## CKAD Challenge #3 CronJobs and Volumes
+
+. Create a static PersistentVolume of 50MB to your nodes/localhosts /tmp/k8s-challenge-3 directory.
+. Create a PersistentVolumeClaim for this volume for 40MB.
+. Create a CronJob which runs two instances every minute of: a pod mounting the PersistentStorageClaim into /tmp/vol and executing the command hostname >> /tmp/vol/storage.
+. We only need to keep the last 4 successful executed jobs in the cronjobs history.
+. Check your local filesystem for the hostnames of these pods with tail -f /tmp/k8s-challenge-3/storage.
+
+
+----
+# create pv and pvc
+
+k create -f volume.yaml
+
+# create cronjob
+k create -f cronjob.yaml
+
+k get po,job
+
+tail -f /tmp/k8s-challenge-3/storage
+----
+
+
+参考 https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/
+
+.volume.yaml
+----
+piVersion: v1
+kind: PersistentVolume
+metadata:
+  name: ckad-pv
+  labels:
+    type: local
+    id: vol1
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 50Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/k8s-challenge-3"
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ckad-pv-claim
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 40Mi
+  selector:
+    matchLabels:
+      id: vol1
+
+----
+
+
+
+
+
+.cronjob.yaml
+----
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/1 * * * *"
+  successfulJobsHistoryLimit: 4
+  jobTemplate:
+    spec:
+      parallelism: 2
+      template:
+        spec:
+          volumes:
+            - name: cron-vol
+              persistentVolumeClaim:
+                claimName: ckad-pv-claim
+          containers:
+          - name: hello
+            image: bash
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - hostname >> /tmp/vol/storage
+            volumeMounts:
+              - name: cron-vol
+                mountPath: /tmp/vol
+          restartPolicy: OnFailure
+----
+
+
+
+
+
+
+
+

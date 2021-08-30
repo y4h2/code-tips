@@ -1,0 +1,43 @@
+# Runtime Security
+
+
+## Behavioral Analytics at host and container level
+
+
+Strace: show system call
+
+check functions on man7.org
+
+
+/proc directory
+
+找到container对应process id，然后在/proc文件夹里面，cat environ可以看到container中的secret.
+
+Secrets as environment variables can be read from anyone who can access /proc on the host
+
+
+
+
+Falco: 可以用来发现malicious behavior
+
+发现可疑行为时，会输出log
+
+
+
+
+.Resource
+* What Have Syscalls Done for you Lately
+* Intro: Falco - Loris Degioanni, Sysdig
+
+
+
+
+## Immutability of Containers at runtime
+
+move logic to init container
+
+
+
+
+
+## Audit Logs
